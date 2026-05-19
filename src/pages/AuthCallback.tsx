@@ -10,41 +10,47 @@ export default function AuthCallback() {
   const [error, setError] = useState('')
 
   useEffect(() => {
-    // Detect error in URL hash (e.g. otp_expired)
-    const hash = window.location.hash
-    if (hash.includes('error=')) {
-      const params = new URLSearchParams(hash.replace('#', ''))
-      const desc = params.get('error_description')
+    const hash = window.location.hash.replace('#', '')
+    const params = new URLSearchParams(hash)
+
+    // Erreur renvoyée par Supabase
+    if (params.get('error')) {
       const code = params.get('error_code')
       if (code === 'otp_expired') {
-        setError('Ce lien a expiré ou a déjà été utilisé. Demande un nouveau lien d\'accès.')
+        setError('Ce lien a déjà été utilisé ou a expiré. Génère un nouveau lien depuis le CRM.')
       } else {
-        setError(desc || t('auth.invalid_link'))
+        setError(params.get('error_description') || t('auth.invalid_link'))
       }
       return
     }
 
-    let cancelled = false
-    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
-      if (cancelled) return
-      if (event === 'SIGNED_IN' && session) nav('/', { replace: true })
-    })
-
-    // Fallback: check existing session after Supabase processes the hash
-    const timeout = setTimeout(async () => {
-      if (cancelled) return
-      const { data } = await supabase.auth.getSession()
-      if (cancelled) return
-      if (data.session) nav('/', { replace: true })
-      else setError(t('auth.invalid_link'))
-    }, 1500)
-
-    return () => {
-      cancelled = true
-      sub.subscription.unsubscribe()
-      clearTimeout(timeout)
+    // Session directement dans le hash (implicit flow)
+    const accessToken = params.get('access_token')
+    const refreshToken = params.get('refresh_token')
+    if (accessToken && refreshToken) {
+      supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
+        .then(({ error: e }) => {
+          if (e) { setError(e.message); return }
+          nav('/', { replace: true })
+        })
+      return
     }
-  }, [nav, t])
+
+    // PKCE flow : code dans les query params
+    const search = new URLSearchParams(window.location.search)
+    const code = search.get('code')
+    if (code) {
+      supabase.auth.exchangeCodeForSession(code)
+        .then(({ error: e }) => {
+          if (e) { setError(e.message); return }
+          nav('/', { replace: true })
+        })
+      return
+    }
+
+    // Aucun token trouvé
+    setError(t('auth.invalid_link'))
+  }, [])
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-6 text-center">
