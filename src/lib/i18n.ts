@@ -56,6 +56,9 @@ const UI = {
                           en: "Open your inbox and click the button — you're directly logged in.",
                           es: 'Abre tu bandeja y haz clic en el botón — entras directamente.' },
   'login.try_another':  { fr: 'Essayer avec un autre email', en: 'Try with another email', es: 'Probar con otro email' },
+  'login.pwd_label':    { fr: 'Mot de passe',              en: 'Password',               es: 'Contraseña' },
+  'login.pwd_cta':      { fr: 'Se connecter',              en: 'Sign in',                es: 'Iniciar sesión' },
+  'login.wrong_pwd':    { fr: 'Email ou mot de passe incorrect.', en: 'Incorrect email or password.', es: 'Email o contraseña incorrectos.' },
 
   // Auth callback
   'auth.connecting':    { fr: 'Connexion en cours...', en: 'Signing in...',          es: 'Conectando...' },

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Mail, Send, CheckCircle, Loader2 } from 'lucide-react'
+import { Mail, Lock, LogIn, Loader2 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useT, useLocale, useSetLocale, type Locale } from '../lib/i18n'
 
@@ -14,26 +14,27 @@ export default function Login() {
   const locale = useLocale()
   const setLocale = useSetLocale()
   const [email, setEmail] = useState('')
-  const [sending, setSending] = useState(false)
-  const [sent, setSent] = useState(false)
+  const [password, setPassword] = useState('')
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!email.trim()) return
-    setSending(true)
+    if (!email.trim() || !password) return
+    setLoading(true)
     setError('')
     try {
-      const { error } = await supabase.auth.signInWithOtp({
+      const { error } = await supabase.auth.signInWithPassword({
         email: email.trim().toLowerCase(),
-        options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+        password,
       })
-      if (error) throw error
-      setSent(true)
+      if (error) {
+        setError(t('login.wrong_pwd'))
+      }
     } catch (e: any) {
       setError(e?.message ?? 'Erreur inconnue')
     } finally {
-      setSending(false)
+      setLoading(false)
     }
   }
 
@@ -65,53 +66,47 @@ export default function Login() {
           <p className="text-text-secondary text-sm">{t('login.subtitle')}</p>
         </div>
 
-        {sent ? (
-          <div className="card text-center space-y-3">
-            <div className="w-12 h-12 mx-auto rounded-full bg-accent-green/15 flex items-center justify-center">
-              <CheckCircle size={24} className="text-accent-green" />
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="text-text-secondary text-xs font-medium mb-2 block">
+              {t('login.email_label')}
+            </label>
+            <div className="relative">
+              <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted" />
+              <input
+                type="email"
+                autoComplete="email"
+                required
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                placeholder="email@..."
+                className="input pl-11"
+              />
             </div>
-            <h2 className="text-text-primary font-semibold">{t('login.sent.title')}</h2>
-            <p className="text-text-secondary text-sm leading-relaxed">
-              <strong className="text-text-primary">{email}</strong>
-              <br />
-              {t('login.sent.body')}
-            </p>
-            <button
-              onClick={() => { setSent(false); setEmail('') }}
-              className="text-text-muted text-xs underline"
-            >
-              {t('login.try_another')}
-            </button>
           </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="text-text-secondary text-xs font-medium mb-2 block">
-                {t('login.email_label')}
-              </label>
-              <div className="relative">
-                <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted" />
-                <input
-                  type="email"
-                  autoComplete="email"
-                  required
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  placeholder="email@..."
-                  className="input pl-11"
-                />
-              </div>
+          <div>
+            <label className="text-text-secondary text-xs font-medium mb-2 block">
+              {t('login.pwd_label')}
+            </label>
+            <div className="relative">
+              <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted" />
+              <input
+                type="password"
+                autoComplete="current-password"
+                required
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                placeholder="••••••••"
+                className="input pl-11"
+              />
             </div>
-            {error && <p className="text-accent-red text-xs">{error}</p>}
-            <button type="submit" disabled={sending || !email.trim()} className="btn-primary w-full">
-              {sending ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
-              {sending ? t('login.sending') : t('login.cta')}
-            </button>
-            <p className="text-text-muted text-xs text-center leading-relaxed pt-2">
-              {t('login.no_password')}
-            </p>
-          </form>
-        )}
+          </div>
+          {error && <p className="text-accent-red text-xs">{error}</p>}
+          <button type="submit" disabled={loading || !email.trim() || !password} className="btn-primary w-full">
+            {loading ? <Loader2 size={16} className="animate-spin" /> : <LogIn size={16} />}
+            {loading ? '...' : t('login.pwd_cta')}
+          </button>
+        </form>
       </div>
     </div>
   )
