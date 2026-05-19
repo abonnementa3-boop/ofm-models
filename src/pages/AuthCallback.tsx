@@ -10,17 +10,40 @@ export default function AuthCallback() {
   const [error, setError] = useState('')
 
   useEffect(() => {
+    // Detect error in URL hash (e.g. otp_expired)
+    const hash = window.location.hash
+    if (hash.includes('error=')) {
+      const params = new URLSearchParams(hash.replace('#', ''))
+      const desc = params.get('error_description')
+      const code = params.get('error_code')
+      if (code === 'otp_expired') {
+        setError('Ce lien a expiré ou a déjà été utilisé. Demande un nouveau lien d\'accès.')
+      } else {
+        setError(desc || t('auth.invalid_link'))
+      }
+      return
+    }
+
     let cancelled = false
-    const check = async () => {
-      await new Promise(r => setTimeout(r, 400))
-      const { data, error: e } = await supabase.auth.getSession()
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       if (cancelled) return
-      if (e) { setError(e.message); return }
+      if (event === 'SIGNED_IN' && session) nav('/', { replace: true })
+    })
+
+    // Fallback: check existing session after Supabase processes the hash
+    const timeout = setTimeout(async () => {
+      if (cancelled) return
+      const { data } = await supabase.auth.getSession()
+      if (cancelled) return
       if (data.session) nav('/', { replace: true })
       else setError(t('auth.invalid_link'))
+    }, 1500)
+
+    return () => {
+      cancelled = true
+      sub.subscription.unsubscribe()
+      clearTimeout(timeout)
     }
-    check()
-    return () => { cancelled = true }
   }, [nav, t])
 
   return (
