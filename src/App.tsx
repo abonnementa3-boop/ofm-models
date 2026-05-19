@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
-import { Loader2, Lock } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 import Login from './pages/Login'
 import AuthCallback from './pages/AuthCallback'
 import Home from './pages/Home'
@@ -71,8 +71,8 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Home model={model} />} />
           <Route path="/contract" element={<Contract model={model} validatedAt={model.contract_validated_at} />} />
-          <Route path="/persona" element={model.contract_validated_at ? <Persona model={model} /> : <ContractRequired locale={locale} />} />
-          <Route path="/todo" element={model.contract_validated_at ? <Todo model={model} /> : <ContractRequired locale={locale} />} />
+          <Route path="/persona" element={<Persona model={model} />} />
+          <Route path="/todo" element={<Todo model={model} />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Layout>
@@ -96,18 +96,3 @@ function FullScreenLoader() {
   )
 }
 
-function ContractRequired({ locale }: { locale: any }) {
-  const nav = useNavigate()
-  return (
-    <div className="pt-12 flex flex-col items-center text-center px-4 gap-4">
-      <div className="w-16 h-16 rounded-2xl bg-bg-hover flex items-center justify-center">
-        <Lock size={28} className="text-text-muted" />
-      </div>
-      <h2 className="text-text-primary font-bold text-lg">{tStatic('locked.title', locale)}</h2>
-      <p className="text-text-secondary text-sm max-w-xs leading-relaxed">{tStatic('locked.body', locale)}</p>
-      <button onClick={() => nav('/contract')} className="btn-primary mt-2">
-        {tStatic('locked.go_contract', locale)}
-      </button>
-    </div>
-  )
-}

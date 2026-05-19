@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom'
-import { Home, FileText, ClipboardList, User, LogOut, Lock } from 'lucide-react'
+import { Home, FileText, ClipboardList, User, LogOut } from 'lucide-react'
 import { signOut } from '../lib/session'
 import type { ModelProfile } from '../lib/session'
 import { useT, useLocale, useSetLocale, type Locale } from '../lib/i18n'
@@ -37,12 +37,17 @@ export default function Layout({ model, children }: { model: ModelProfile | null
   const firstName = model?.first_name || model?.name?.split(' ')[0] || ''
   const contractValidated = !!model?.contract_validated_at
 
-  const NAV = [
-    { to: '/', label: t('nav.home'), icon: Home, end: true, locked: false },
-    { to: '/contract', label: t('nav.contract'), icon: FileText, end: false, locked: false },
-    { to: '/persona', label: t('nav.persona'), icon: User, end: false, locked: !contractValidated },
-    { to: '/todo', label: t('nav.tasks'), icon: ClipboardList, end: false, locked: !contractValidated },
-  ]
+  const NAV = contractValidated
+    ? [
+        { to: '/', label: t('nav.home'), icon: Home, end: true },
+        { to: '/todo', label: t('nav.tasks'), icon: ClipboardList, end: false },
+      ]
+    : [
+        { to: '/', label: t('nav.home'), icon: Home, end: true },
+        { to: '/contract', label: t('nav.contract'), icon: FileText, end: false },
+        { to: '/persona', label: t('nav.persona'), icon: User, end: false },
+        { to: '/todo', label: t('nav.tasks'), icon: ClipboardList, end: false },
+      ]
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -66,18 +71,8 @@ export default function Layout({ model, children }: { model: ModelProfile | null
       </main>
 
       <nav className="fixed bottom-0 left-0 right-0 bg-bg-card/95 backdrop-blur border-t border-bg-border pb-[env(safe-area-inset-bottom)]">
-        <div className="grid grid-cols-4 max-w-md mx-auto">
-          {NAV.map(item => item.locked ? (
-            <div
-              key={item.to}
-              className="flex flex-col items-center gap-1 py-3 text-xs font-medium text-text-muted/40 relative"
-              title={t('locked.title')}
-            >
-              <item.icon size={20} />
-              <span>{item.label}</span>
-              <Lock size={9} className="absolute top-2.5 right-[calc(50%-12px)]" />
-            </div>
-          ) : (
+        <div className={`grid max-w-md mx-auto ${NAV.length === 2 ? 'grid-cols-2' : 'grid-cols-4'}`}>
+          {NAV.map(item => (
             <NavLink
               key={item.to}
               to={item.to}
