@@ -12,6 +12,12 @@ export default function AuthCallback() {
   useEffect(() => {
     const hash = window.location.hash.replace('#', '')
     const params = new URLSearchParams(hash)
+    // DEBUG temporaire — à supprimer après diagnostic
+    console.log('AuthCallback hash:', hash)
+    console.log('AuthCallback search:', window.location.search)
+    console.log('access_token present:', !!params.get('access_token'))
+    console.log('error present:', params.get('error'))
+    console.log('error_code:', params.get('error_code'))
 
     // Erreur renvoyée par Supabase
     if (params.get('error')) {
