@@ -10,6 +10,7 @@ export interface ModelProfile {
   nationality?: string | null
   auth_user_id?: string | null
   contract_validated_at?: string | null
+  persona_validated_at?: string | null
 }
 
 export function useSession() {
@@ -34,7 +35,7 @@ export async function getCurrentModel(): Promise<ModelProfile | null> {
 
   const { data, error } = await supabase
     .from('models')
-    .select('id, name, first_name, last_name, nationality, auth_user_id, contract_validated_at')
+    .select('id, name, first_name, last_name, nationality, auth_user_id, contract_validated_at, persona_validated_at')
     .eq('auth_user_id', u.user.id)
     .maybeSingle()
   if (error) { console.error('getCurrentModel', error); return null }
@@ -46,7 +47,7 @@ export async function getCurrentModel(): Promise<ModelProfile | null> {
 
   const { data: linked } = await supabase
     .from('models')
-    .select('id, name, first_name, last_name, nationality, auth_user_id, contract_validated_at')
+    .select('id, name, first_name, last_name, nationality, auth_user_id, contract_validated_at, persona_validated_at')
     .eq('auth_user_id', u.user.id)
     .maybeSingle()
   return linked as ModelProfile | null

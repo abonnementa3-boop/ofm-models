@@ -35,19 +35,13 @@ export default function Layout({ model, children }: { model: ModelProfile | null
   }
 
   const firstName = model?.first_name || model?.name?.split(' ')[0] || ''
-  const contractValidated = !!model?.contract_validated_at
 
-  const NAV = contractValidated
-    ? [
-        { to: '/', label: t('nav.home'), icon: Home, end: true },
-        { to: '/todo', label: t('nav.tasks'), icon: ClipboardList, end: false },
-      ]
-    : [
-        { to: '/', label: t('nav.home'), icon: Home, end: true },
-        { to: '/contract', label: t('nav.contract'), icon: FileText, end: false },
-        { to: '/persona', label: t('nav.persona'), icon: User, end: false },
-        { to: '/todo', label: t('nav.tasks'), icon: ClipboardList, end: false },
-      ]
+  const NAV = [
+    { to: '/', label: t('nav.home'), icon: Home, end: true },
+    ...(!model?.contract_validated_at ? [{ to: '/contract', label: t('nav.contract'), icon: FileText, end: false }] : []),
+    ...(!model?.persona_validated_at ? [{ to: '/persona', label: t('nav.persona'), icon: User, end: false }] : []),
+    { to: '/todo', label: t('nav.tasks'), icon: ClipboardList, end: false },
+  ]
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -71,7 +65,7 @@ export default function Layout({ model, children }: { model: ModelProfile | null
       </main>
 
       <nav className="fixed bottom-0 left-0 right-0 bg-bg-card/95 backdrop-blur border-t border-bg-border pb-[env(safe-area-inset-bottom)]">
-        <div className={`grid max-w-md mx-auto ${NAV.length === 2 ? 'grid-cols-2' : 'grid-cols-4'}`}>
+        <div className="grid max-w-md mx-auto" style={{ gridTemplateColumns: `repeat(${NAV.length}, 1fr)` }}>
           {NAV.map(item => (
             <NavLink
               key={item.to}
