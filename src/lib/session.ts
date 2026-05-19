@@ -29,8 +29,7 @@ export function useSession() {
 }
 
 export async function getCurrentModel(): Promise<ModelProfile | null> {
-  const { data: u, error: userErr } = await supabase.auth.getUser()
-  console.log('[getCurrentModel] getUser:', u?.user?.id, u?.user?.email, userErr?.message)
+  const { data: u } = await supabase.auth.getUser()
   if (!u.user) return null
 
   const { data, error } = await supabase
@@ -38,21 +37,18 @@ export async function getCurrentModel(): Promise<ModelProfile | null> {
     .select('id, name, first_name, last_name, nationality, auth_user_id, contract_validated_at')
     .eq('auth_user_id', u.user.id)
     .maybeSingle()
-  console.log('[getCurrentModel] by auth_user_id:', data?.name, error?.message)
-  if (error) { console.error('getCurrentModel select error:', error); return null }
+  if (error) { console.error('getCurrentModel', error); return null }
   if (data) return data as ModelProfile
 
   // Première connexion : lier via email
-  const { data: rpcData, error: rpcErr } = await supabase.rpc('link_model_to_auth_user')
-  console.log('[getCurrentModel] rpc result:', JSON.stringify(rpcData), rpcErr?.message)
-  if (rpcErr) { console.error('link_model_to_auth_user error:', rpcErr); return null }
+  const { error: rpcErr } = await supabase.rpc('link_model_to_auth_user')
+  if (rpcErr) { console.error('link_model_to_auth_user', rpcErr); return null }
 
-  const { data: linked, error: linkedErr } = await supabase
+  const { data: linked } = await supabase
     .from('models')
     .select('id, name, first_name, last_name, nationality, auth_user_id, contract_validated_at')
     .eq('auth_user_id', u.user.id)
     .maybeSingle()
-  console.log('[getCurrentModel] after link:', linked?.name, linkedErr?.message)
   return linked as ModelProfile | null
 }
 
