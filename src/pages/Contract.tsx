@@ -52,36 +52,21 @@ export default function Contract({ model, validatedAt }: { model: ModelProfile; 
 
   useEffect(() => { load() }, [model.id])
 
-  const openUrl = (url: string, filename?: string) => {
-    const a = document.createElement('a')
-    a.href = url
-    a.target = '_blank'
-    a.rel = 'noopener noreferrer'
-    if (filename) a.download = filename
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
+  const [signedUrl, setSignedUrl] = useState<string | null>(null)
+  const [loadingUrl, setLoadingUrl] = useState(false)
+
+  const loadSignedUrl = async () => {
+    if (!doc?.storage_path || signedUrl) return
+    setLoadingUrl(true)
+    const { data, error } = await supabase.storage
+      .from('model-documents')
+      .createSignedUrl(doc.storage_path, 3600, { download: doc.label || 'contrat.pdf' })
+    if (!error && data?.signedUrl) setSignedUrl(data.signedUrl)
+    else setError('Impossible de générer le lien : ' + (error?.message ?? ''))
+    setLoadingUrl(false)
   }
 
-  const handleDownload = async () => {
-    if (!doc) return
-    setError('')
-    try {
-      if (doc.drive_url) {
-        openUrl(doc.drive_url)
-        return
-      }
-      if (doc.storage_path) {
-        const { data, error } = await supabase.storage
-          .from('model-documents')
-          .createSignedUrl(doc.storage_path, 3600, { download: doc.label || 'contrat.pdf' })
-        if (error) throw error
-        if (data?.signedUrl) openUrl(data.signedUrl, doc.label || 'contrat.pdf')
-      }
-    } catch (e: any) {
-      setError('Impossible de télécharger : ' + e.message)
-    }
-  }
+  useEffect(() => { if (doc?.storage_path) loadSignedUrl() }, [doc?.storage_path])
 
   const handleUpload = async (file: File) => {
     setError('')
@@ -138,10 +123,19 @@ export default function Contract({ model, validatedAt }: { model: ModelProfile; 
             <p className="text-text-secondary text-xs">
               {doc.label || 'Contract'} · {t('contract.added_on')} {new Date(doc.uploaded_at).toLocaleDateString(dateLocale)}
             </p>
-            <button onClick={handleDownload} className="btn-primary w-full">
-              {doc.drive_url ? <ExternalLink size={14} /> : <Download size={14} />}
-              {doc.drive_url ? t('contract.open_drive') : t('contract.download_pdf')}
-            </button>
+            {doc.drive_url ? (
+              <a href={doc.drive_url} target="_blank" rel="noopener noreferrer" className="btn-primary w-full justify-center">
+                <ExternalLink size={14} /> {t('contract.open_drive')}
+              </a>
+            ) : signedUrl ? (
+              <a href={signedUrl} target="_blank" rel="noopener noreferrer" className="btn-primary w-full justify-center">
+                <Download size={14} /> {t('contract.download_pdf')}
+              </a>
+            ) : (
+              <button disabled className="btn-primary w-full opacity-60">
+                {loadingUrl ? <><Download size={14} /> Chargement...</> : <><Download size={14} /> {t('contract.download_pdf')}</>}
+              </button>
+            )}
             <details className="text-text-muted text-xs leading-relaxed">
               <summary className="cursor-pointer text-text-secondary mb-1">{t('contract.how_to_sign')}</summary>
               <ol className="list-decimal list-inside space-y-1 mt-2">
