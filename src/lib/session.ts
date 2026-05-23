@@ -53,6 +53,25 @@ export async function getCurrentModel(): Promise<ModelProfile | null> {
   return linked as ModelProfile | null
 }
 
+export interface ManagerProfile {
+  id: string          // = auth_user_id (profiles.id)
+  name: string        // profiles.full_name
+  role: string        // profiles.role
+}
+
+export async function getCurrentManager(): Promise<ManagerProfile | null> {
+  const { data: u } = await supabase.auth.getUser()
+  if (!u.user) return null
+  const { data } = await supabase
+    .from('profiles')
+    .select('id, full_name, role')
+    .eq('id', u.user.id)
+    .in('role', ['manager', 'admin', 'agency'])
+    .maybeSingle()
+  if (!data) return null
+  return { id: data.id, name: data.full_name, role: data.role }
+}
+
 export async function signOut() {
   await supabase.auth.signOut()
 }

@@ -40,6 +40,23 @@ export default function Persona({ model }: { model: ModelProfile }) {
     setResponses(r => ({ ...r, [key]: value }))
   }
 
+  // Sync silencieuse vers Notion (ne bloque pas l'UI, erreurs ignorées)
+  const syncToNotion = async (currentResponses: Responses) => {
+    try {
+      await fetch('/api/notion-sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          modelId:   model.id,
+          modelName: model.name || model.first_name || model.id,
+          responses: currentResponses,
+        }),
+      })
+    } catch {
+      // Silencieux — la sync Notion ne doit pas bloquer la sauvegarde
+    }
+  }
+
   const handleBlur = async (key: string) => {
     setSavingKey(key)
     try {
@@ -55,6 +72,7 @@ export default function Persona({ model }: { model: ModelProfile }) {
           { onConflict: 'model_id' },
         )
       if (error) console.error(error)
+      else syncToNotion(responses) // sync Notion en arrière-plan
     } finally {
       setTimeout(() => setSavingKey(''), 600)
     }
@@ -77,6 +95,7 @@ export default function Persona({ model }: { model: ModelProfile }) {
         )
       if (error) throw error
       setCompletedAt(now)
+      syncToNotion(responses) // sync finale vers Notion
     } catch (e: any) {
       alert('Erreur : ' + e.message)
     } finally {

@@ -7,8 +7,10 @@ import Home from './pages/Home'
 import Persona from './pages/Persona'
 import Contract from './pages/Contract'
 import Todo from './pages/Todo'
+import MetaChange from './pages/MetaChange'
+import MetaChangeManager from './pages/MetaChangeManager'
 import Layout from './components/Layout'
-import { getCurrentModel, useSession, type ModelProfile } from './lib/session'
+import { getCurrentModel, getCurrentManager, useSession, type ModelProfile, type ManagerProfile } from './lib/session'
 import { LocaleContext, LocaleSetterContext, detectBrowserLocale, nationalityToLocale, t as tStatic, type Locale } from './lib/i18n'
 
 const LOCALE_KEY = 'portal_locale'
@@ -16,6 +18,7 @@ const LOCALE_KEY = 'portal_locale'
 export default function App() {
   const { session, loading } = useSession()
   const [model, setModel] = useState<ModelProfile | null>(null)
+  const [manager, setManager] = useState<ManagerProfile | null>(null)
   const [loadingModel, setLoadingModel] = useState(false)
   const loc = useLocation()
   const nav = useNavigate()
@@ -31,14 +34,20 @@ export default function App() {
   }
 
   useEffect(() => {
-    if (!session) { setModel(null); return }
+    if (!session) { setModel(null); setManager(null); return }
     setLoadingModel(true)
-    getCurrentModel().then(m => {
-      setModel(m)
-      setLoadingModel(false)
-      // Si la modèle n'a pas encore choisi de langue, dériver de la nationalité
-      if (!localStorage.getItem(LOCALE_KEY) && m?.nationality) {
-        setLocaleState(nationalityToLocale(m.nationality))
+    getCurrentModel().then(async m => {
+      if (m) {
+        setModel(m)
+        setLoadingModel(false)
+        if (!localStorage.getItem(LOCALE_KEY) && m?.nationality) {
+          setLocaleState(nationalityToLocale(m.nationality))
+        }
+      } else {
+        // Pas de modèle → vérifier si c'est une manageuse
+        const mgr = await getCurrentManager()
+        setManager(mgr)
+        setLoadingModel(false)
       }
     })
   }, [session?.user.id])
@@ -55,6 +64,8 @@ export default function App() {
     content = <Navigate to="/" replace />
   } else if (loadingModel) {
     content = <FullScreenLoader />
+  } else if (!model && manager) {
+    content = <MetaChangeManager manager={manager} />
   } else if (!model) {
     content = (
       <div className="min-h-screen flex flex-col items-center justify-center px-6 text-center">
@@ -73,6 +84,7 @@ export default function App() {
           <Route path="/contract" element={<Contract model={model} validatedAt={model.contract_validated_at} />} />
           <Route path="/persona" element={<Persona model={model} />} />
           <Route path="/todo" element={<Todo model={model} />} />
+          <Route path="/metachange" element={<MetaChange model={model} />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Layout>

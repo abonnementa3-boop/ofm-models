@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom'
-import { Home, FileText, ClipboardList, User, LogOut } from 'lucide-react'
+import { Home, FileText, ClipboardList, User, LogOut, Film } from 'lucide-react'
 import { signOut } from '../lib/session'
 import type { ModelProfile } from '../lib/session'
 import { useT, useLocale, useSetLocale, type Locale } from '../lib/i18n'
@@ -41,6 +41,7 @@ export default function Layout({ model, children }: { model: ModelProfile | null
     ...(!model?.contract_validated_at ? [{ to: '/contract', label: t('nav.contract'), icon: FileText, end: false }] : []),
     ...(!model?.persona_validated_at ? [{ to: '/persona', label: t('nav.persona'), icon: User, end: false }] : []),
     { to: '/todo', label: t('nav.tasks'), icon: ClipboardList, end: false },
+    { to: '/metachange', label: 'MetaChange', icon: Film, end: false },
   ]
 
   return (
